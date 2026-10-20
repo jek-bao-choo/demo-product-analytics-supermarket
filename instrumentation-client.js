@@ -59,6 +59,25 @@
 //     custom provider, or the CDN <script> snippet), move it here and delete
 //     the old call, so RUM is not started twice.
 //
+//   ARE THE [NEW] LINES REQUIRED FOR PRODUCT ANALYTICS?
+//     Not strictly. Datadog's docs say that if RUM is already set up, you do
+//     not need to re-instrument for Product Analytics; turning it on is a
+//     setting in Datadog. The [NEW] lines come from the current Next.js setup
+//     guide, and they are recommended because they make the data cleaner:
+//       - Plain RUM notices a page change only after the browser URL changes,
+//         and names each view after its raw URL. That is fine for RUM, which
+//         mostly looks at single pages and single sessions.
+//       - Product Analytics compares steps across many users, and each step
+//         is a view name. With nextjsPlugin + onRouterTransitionStart +
+//         <DatadogAppRouter />, a page change is recorded the moment it starts
+//         (in the right order after the click), and views are named after
+//         the route pattern (/product/[id]) instead of every individual URL.
+//         Without this, a funnel step like "Product" breaks into one step per
+//         product URL.
+//       - remoteConfiguration lets you raise sessionSampleRate to 100 for
+//         Product Analytics without a redeploy.
+//     See the README section "What the [NEW] lines do, and are they required?"
+//
 //   The values come from NEXT_PUBLIC_DD_* environment variables (see
 //   .env.example), so the IDs are not committed to this public repo.
 //   Next.js copies them into the browser bundle at build time.

@@ -24,5 +24,29 @@ npm start            # serves ./out for a quick check
 
    Alternatively, run `npm run build` and drag-and-drop the `out/` folder via **Deploy without Git**.
 
-## Where to add Datadog
-Initialise the Datadog Browser SDK in a client component rendered from `app/layout.js` (see the TODO comment there).
+## Datadog Product Analytics
+
+The instrumentation follows the 4-step setup guide in the Datadog app. Each step is marked `STEP 1`–`STEP 4` in the code comments. Every step also says what to change if you are **new to Datadog RUM** and what is **new for an existing RUM customer**.
+
+| Step | What | Where |
+|---|---|---|
+| 1 | `npm install @datadog/browser-rum @datadog/browser-rum-nextjs` | `package.json` |
+| 2 | Initialise RUM with `nextjsPlugin()` | `instrumentation-client.js` |
+| 3 | Add `<DatadogAppRouter />` | `app/layout.js` |
+| 4 | (Optional) Report errors with `addNextjsError()` | `app/error.js`, `app/global-error.js` |
+
+**Why is there no separate Product Analytics SDK?** Product Analytics uses the same SDK and data as RUM: sessions, views and actions. Turn it on per application in Datadog under **Digital Experience → Manage Applications → your app → Product Settings → Product Analytics → Enable**. `@datadog/browser-rum-nextjs` is the Next.js routing integration, not a Product Analytics module.
+
+**Existing RUM customers, in short:**
+- Add `@datadog/browser-rum-nextjs`.
+- Add `nextjsPlugin()` and the `onRouterTransitionStart` export.
+- Add `<DatadogAppRouter />`.
+- Use `sessionSampleRate: 100` and `trackUserInteractions: true`.
+- Enable Product Analytics in the Datadog UI.
+
+### Configuration
+The Datadog IDs are read from environment variables so they are not committed:
+```bash
+cp .env.example .env.local   # then fill in the values from Datadog
+```
+On **AWS Amplify**, add the same `NEXT_PUBLIC_DD_*` keys under **App settings → Environment variables** and redeploy. Next.js inlines them at build time. If the variables are missing, the site still works, but RUM stays off.

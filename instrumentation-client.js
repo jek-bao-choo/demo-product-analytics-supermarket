@@ -82,6 +82,23 @@
 //   .env.example), so the IDs are not committed to this public repo.
 //   Next.js copies them into the browser bundle at build time.
 // -----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
+// PRODUCT ANALYTICS SETUP BEST PRACTICES (details in README "Best practices")
+//   1. Enable Product Analytics for the app in Datadog. Without the setting,
+//      the events only appear in RUM.
+//   2. sessionSampleRate: 100 and trackUserInteractions: true (see below).
+//   3. Start RUM once, as early as possible: here in instrumentation-client.js.
+//   4. Keep view names clean: the Next.js plugin names views by route pattern.
+//   5. Name key actions after what the user intends (data-dd-action-name or
+//      the Action Management Visual Labeler). See ProductCard.js and Carousel.js.
+//   6. Use datadogRum.addAction(name, context) for important events that are
+//      not clicks, or that need details (product id, price). See ProductCard.js.
+//   7. Identify logged-in users with setUser / clearUser. See Header.js.
+//   8. Protect privacy: defaultPrivacyLevel 'mask-user-input' (or stricter),
+//      and enablePrivacyForActionName if button text could contain personal data.
+//   9. Tag every event with service, env and version. Use a separate env for
+//      test traffic (this demo uses env: 'demo') so it can be filtered out.
+// -----------------------------------------------------------------------------
 import { datadogRum } from '@datadog/browser-rum';
 import { nextjsPlugin } from '@datadog/browser-rum-nextjs'; // [NEW] Next.js integration
 

@@ -26,6 +26,15 @@ export default function Header() {
           <button className="link-btn">📍 Enter your address or postal code ▾</button>
           <button className="link-btn">ⓘ Help Centre</button>
           <button className="btn btn-outline">Sign up</button>
+          {/*
+            PRODUCT ANALYTICS BEST PRACTICE: identify users when they log in.
+              After login succeeds:   datadogRum.setUser({ id: '<internal user id>' })
+              On logout:              datadogRum.clearUser()
+            Product Analytics groups user profiles and retention by the user id. Visitors
+            you never identify are still tracked with an anonymous id (usr.anonymous_id).
+            Prefer an internal id over email or name unless your privacy policy allows them.
+            This demo has no real login, so it does not call setUser.
+          */}
           <button className="btn btn-solid">Log in</button>
         </div>
       </div>

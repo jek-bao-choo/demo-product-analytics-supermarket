@@ -77,6 +77,27 @@ Only step 7 is strictly required to start using Product Analytics. Step 3 is str
 ### For a customer new to Datadog RUM
 Follow Steps 1–4 as they are in this repo, then enable Product Analytics in Datadog (step 7 above).
 
+### Product Analytics setup best practices
+
+These are collected from Datadog's Product Analytics and RUM docs. Each one is also noted in the code comments where it applies.
+
+| # | Best practice | Why | In this repo |
+|---|---|---|---|
+| 1 | **Enable Product Analytics per application** in Datadog (Manage Applications → Product Settings → Product Analytics) | Without this setting, the events only appear in RUM | Done in the Datadog UI |
+| 2 | **`sessionSampleRate: 100`** and **`trackUserInteractions: true`** | Funnels, retention and paths need every session, and clicks become the actions they are built from | `instrumentation-client.js` |
+| 3 | **Start RUM once, as early as possible** | A second start, or a late start, causes duplicate or missing views | `instrumentation-client.js` (Next.js runs it before the app becomes interactive) |
+| 4 | **Keep view names clean**, one name per page type | Each funnel step is a view name; raw URLs split a step into many | `nextjsPlugin()` + `<DatadogAppRouter />` |
+| 5 | **Name key actions after what the user intends**, with `data-dd-action-name` or the Action Management **Visual Labeler** (no code, also applies to past data) | Names based on button text change when the copy changes, and identical buttons can't be told apart | Comments in `ProductCard.js`, `Carousel.js`, `PromoBanners.js` |
+| 6 | **Use `datadogRum.addAction(name, context)`** for important events that aren't clicks, or that need details | Lets you filter funnels by product, price or campaign | Comment in `ProductCard.js` (e.g. `cart_add` with `product_id`) |
+| 7 | **Identify users**: call `datadogRum.setUser({ id })` after login and `clearUser()` on logout. Use `setAccount` for business accounts | User profiles and retention group by the user id. Anonymous visitors are still tracked with `usr.anonymous_id` | Comment in `Header.js` (the demo has no real login) |
+| 8 | **Protect privacy**: `defaultPrivacyLevel: 'mask-user-input'` or stricter. Turn on `enablePrivacyForActionName` if button text could contain personal data. Prefer internal user ids over email or name | Session Replay and action names can capture what is on screen. Explicit `data-dd-action-name` values still show when other names are masked | `instrumentation-client.js` (options left commented, as in the setup guide) |
+| 9 | **Tag `service`, `env` and `version`**, and use a separate `env` for test traffic | Lets you filter test traffic out and compare releases | `service: 'supermarket-web'`, `env: 'demo'`, `version: '1.0.0'` |
+| 10 | **Plan for server-side events separately** | Events sent through the Product Analytics API are billed separately | Not used here |
+
+Product Analytics keeps data for 15 months by default.
+
+**References:** [Product Analytics](https://docs.datadoghq.com/product_analytics/) · [Tracking user actions](https://docs.datadoghq.com/real_user_monitoring/browser/tracking_user_actions/) · [Profiles (setUser / setAccount)](https://docs.datadoghq.com/product_analytics/profiles/) · [Action Management](https://docs.datadoghq.com/product_analytics/action_management/) · [Advanced configuration](https://docs.datadoghq.com/real_user_monitoring/application_monitoring/browser/advanced_configuration/)
+
 ### Keeping your IDs out of the public repo
 - The code reads the IDs from `NEXT_PUBLIC_DD_*` environment variables instead of hardcoding them.
 - Put your real values in `.env.local`, which git ignores:

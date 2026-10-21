@@ -11,6 +11,12 @@ export default function Carousel({ slides, tall = false }) {
 
   return (
     <div className={`carousel ${tall ? 'carousel-tall' : ''}`}>
+      {/*
+        PRODUCT ANALYTICS BEST PRACTICE: every slide links to the same page, so give
+        each banner its own action name to compare which campaign drives traffic, e.g.
+        data-dd-action-name={`Hero banner: ${slide.id}`}. Without it, the name is the
+        banner's text, which changes whenever marketing changes the copy.
+      */}
       <Link href={CATEGORY_URL} className="banner" style={{ background: slide.bg }}>
         <div className="banner-copy">
           <span className="banner-eyebrow">{slide.eyebrow}</span>

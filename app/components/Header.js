@@ -12,12 +12,12 @@ export default function Header() {
   const pathname = usePathname();
   const { count } = useCart();
   const [menuOpen, setMenuOpen] = useState(false);
-  const onCategory = pathname.startsWith('/category');
+  const onCategory = pathname.startsWith('/supermarket/category');
 
   return (
     <header className="header">
       <div className="header-top container">
-        <Link href="/" className="logo" aria-label="Supermarket home">
+        <Link href="/supermarket/" className="logo" aria-label="Supermarket home">
           <span className="logo-mark" aria-hidden="true">S</span>
           <span className="logo-text">Supermarket</span>
         </Link>

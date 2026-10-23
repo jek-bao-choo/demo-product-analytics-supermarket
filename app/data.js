@@ -1,6 +1,6 @@
 // Mock data for the demo site. All product names are generic.
 
-export const CATEGORY_URL = '/category/snacks--confectionery/';
+export const CATEGORY_URL = '/supermarket/category/snacks--confectionery/';
 
 export const homeSlides = [
   {

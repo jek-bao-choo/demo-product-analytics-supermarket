@@ -1,6 +1,6 @@
-import Carousel from '../../components/Carousel';
-import ProductRow from '../../components/ProductRow';
-import { categorySlides, snackDeals, bestSellers } from '../../data';
+import Carousel from '../../../components/Carousel';
+import ProductRow from '../../../components/ProductRow';
+import { categorySlides, snackDeals, bestSellers } from '../../../data';
 
 export const metadata = {
   title: 'Snacks & Confectionery | Supermarket',

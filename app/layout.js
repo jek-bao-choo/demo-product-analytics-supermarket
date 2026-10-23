@@ -1,11 +1,9 @@
 import './globals.css';
 import { DatadogAppRouter } from '@datadog/browser-rum-nextjs';
-import Header from './components/Header';
-import { CartProvider } from './components/CartContext';
 
 export const metadata = {
-  title: 'Supermarket | Online Grocery Shopping',
-  description: 'Demo grocery store for Datadog Product Analytics',
+  title: 'Demo Stores | Product Analytics',
+  description: 'Demo stores (Supermarket and Furniture Mart) for Datadog Product Analytics',
 };
 
 export default function RootLayout({ children }) {
@@ -27,10 +25,7 @@ export default function RootLayout({ children }) {
               effect), remove that code, because this component replaces it.
         */}
         <DatadogAppRouter />
-        <CartProvider>
-          <Header />
-          <main className="container main">{children}</main>
-        </CartProvider>
+        {children}
       </body>
     </html>
   );

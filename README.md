@@ -1,9 +1,16 @@
-# Supermarket – Product Analytics demo site
+# Demo stores – Product Analytics demo site
 
-A two-level mockup grocery site built with Next.js (static export) for demoing Datadog Product Analytics.
+Two two-level mockup stores built with Next.js (static export) for demoing Datadog Product Analytics. The home page `/` is a directory that links to both stores.
 
-- **Level 1:** `/` – Homepage (hero carousel, promo banners, vouchers, flash deals)
-- **Level 2:** `/category/snacks--confectionery/` – reached from any hero slide, either side banner, or **Categories → Snacks & Confectionery**
+**Supermarket** (grocery)
+- **Level 1:** `/supermarket/` – Homepage (hero carousel, promo banners, vouchers, flash deals)
+- **Level 2:** `/supermarket/category/snacks--confectionery/` – reached from any hero slide, either side banner, or **Categories → Snacks & Confectionery**
+
+**Furniture Mart** (home furnishing)
+- **Level 1:** `/furniture-mart/` – Homepage (hero carousel, Shop by categories / Shop rooms tiles, top picks, lower prices)
+- **Level 2:** `/furniture-mart/category/sofas-armchairs/` – reached from any hero slide, the **New**, **Our top picks** or **Sofas & armchairs** tiles, the **Living room** room tile, or **Products → Sofas & armchairs**
+
+Both stores share one RUM application. Each store's layout sets a `store` global context property (`supermarket` or `furniture-mart`, see `app/components/StoreContext.js`), so you can filter funnels and paths by `@context.store`.
 
 ## Run locally
 ```bash
@@ -92,7 +99,8 @@ These are collected from Datadog's Product Analytics and RUM docs. Each one is a
 | 7 | **Identify users**: call `datadogRum.setUser({ id })` after login and `clearUser()` on logout. Use `setAccount` for business accounts | User profiles and retention group by the user id. Anonymous visitors are still tracked with `usr.anonymous_id` | Comment in `Header.js` (the demo has no real login) |
 | 8 | **Protect privacy**: `defaultPrivacyLevel: 'mask-user-input'` or stricter. Turn on `enablePrivacyForActionName` if button text could contain personal data. Prefer internal user ids over email or name | Session Replay and action names can capture what is on screen. Explicit `data-dd-action-name` values still show when other names are masked | `instrumentation-client.js` (options left commented, as in the setup guide) |
 | 9 | **Tag `service`, `env` and `version`**, and use a separate `env` for test traffic | Lets you filter test traffic out and compare releases | `service: 'supermarket-web'`, `env: 'demo'`, `version: '1.0.0'` |
-| 10 | **Plan for server-side events separately** | Events sent through the Product Analytics API are billed separately | Not used here |
+| 10 | **Add global context when one app covers several sites**: `datadogRum.setGlobalContextProperty('store', ...)` | Every view and action carries the store, so funnels, paths and heatmaps can be filtered per site | `app/components/StoreContext.js`, used in each store's `layout.js` |
+| 11 | **Plan for server-side events separately** | Events sent through the Product Analytics API are billed separately | Not used here |
 
 Product Analytics keeps data for 15 months by default.
 

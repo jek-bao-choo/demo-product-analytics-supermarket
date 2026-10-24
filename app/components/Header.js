@@ -33,7 +33,8 @@ export default function Header() {
             Product Analytics groups user profiles and retention by the user id. Visitors
             you never identify are still tracked with an anonymous id (usr.anonymous_id).
             Prefer an internal id over email or name unless your privacy policy allows them.
-            This demo has no real login, so it does not call setUser.
+            This demo has no real login, so instrumentation-client.js calls setUser with a
+            random visitor id kept in localStorage (app/visitor.js) instead.
           */}
           <button className="btn btn-solid">Log in</button>
         </div>

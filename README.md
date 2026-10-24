@@ -43,6 +43,7 @@ The instrumentation follows the 4-step setup guide in the Datadog app. Each step
 | 2 | Start RUM with `nextjsPlugin()` and export `onRouterTransitionStart` | `instrumentation-client.js` |
 | 3 | Add `<DatadogAppRouter />` | `app/layout.js` |
 | 4 (optional) | Report errors with `addNextjsError()` | `app/error.js`, `app/global-error.js` |
+| 5 (optional) | Datadog Feature Flags (`DatadogProvider` + OpenFeature) for Experiments | `instrumentation-client.js`, `app/components/FlagsProvider.js` |
 
 ### Why is there no separate Product Analytics SDK?
 Product Analytics uses the same SDK and the same data as RUM: sessions, page views and clicks (actions). The SDK collects one stream of events. RUM uses it for performance and error monitoring, and Product Analytics uses it for funnels, user paths, retention and heatmaps. So Product Analytics is turned on in Datadog, not in code:
@@ -94,10 +95,10 @@ These are collected from Datadog's Product Analytics and RUM docs. Each one is a
 | 2 | **`sessionSampleRate: 100`** and **`trackUserInteractions: true`** | Funnels, retention and paths need every session, and clicks become the actions they are built from | `instrumentation-client.js` |
 | 3 | **Start RUM once, as early as possible** | A second start, or a late start, causes duplicate or missing views | `instrumentation-client.js` (Next.js runs it before the app becomes interactive) |
 | 4 | **Keep view names clean**, one name per page type | Each funnel step is a view name; raw URLs split a step into many | `nextjsPlugin()` + `<DatadogAppRouter />` |
-| 5 | **Name key actions after what the user intends**, with `data-dd-action-name` or the Action Management **Visual Labeler** (no code, also applies to past data) | Names based on button text change when the copy changes, and identical buttons can't be told apart | Comments in `ProductCard.js`, `Carousel.js`, `PromoBanners.js` |
+| 5 | **Name key actions after what the user intends**, with `data-dd-action-name` or the Action Management **Visual Labeler** (no code, also applies to past data) | Names based on button text change when the copy changes, and identical buttons can't be told apart | Done: `Hero banner: <id>` on hero banners (`Carousel.js`, `FmCarousel.js`) and `Add to cart` on both stores' buttons. Comment in `PromoBanners.js` |
 | 6 | **Use `datadogRum.addAction(name, context)`** for important events that aren't clicks, or that need details | Lets you filter funnels by product, price or campaign | Comment in `ProductCard.js` (e.g. `cart_add` with `product_id`) |
-| 7 | **Identify users**: call `datadogRum.setUser({ id })` after login and `clearUser()` on logout. Use `setAccount` for business accounts | User profiles and retention group by the user id. Anonymous visitors are still tracked with `usr.anonymous_id` | Comment in `Header.js` (the demo has no real login) |
-| 8 | **Protect privacy**: `defaultPrivacyLevel: 'mask-user-input'` or stricter. Turn on `enablePrivacyForActionName` if button text could contain personal data. Prefer internal user ids over email or name | Session Replay and action names can capture what is on screen. Explicit `data-dd-action-name` values still show when other names are masked | `instrumentation-client.js` (options left commented, as in the setup guide) |
+| 7 | **Identify users**: call `datadogRum.setUser({ id })` after login and `clearUser()` on logout. Use `setAccount` for business accounts | User profiles and retention group by the user id. Anonymous visitors are still tracked with `usr.anonymous_id` | `instrumentation-client.js` calls `setUser` with a random visitor id kept in localStorage (`app/visitor.js`), because the demo has no login |
+| 8 | **Protect privacy**: `defaultPrivacyLevel: 'mask-user-input'` or stricter. Turn on `enablePrivacyForActionName` if button text could contain personal data. Prefer internal user ids over email or name | Session Replay and action names can capture what is on screen. Explicit `data-dd-action-name` values still show when other names are masked | `defaultPrivacyLevel: 'mask-user-input'` in `instrumentation-client.js` |
 | 9 | **Tag `service`, `env` and `version`**, and use a separate `env` for test traffic | Lets you filter test traffic out and compare releases | `service: 'supermarket-web'`, `env: 'demo'`, `version: '1.0.0'` |
 | 10 | **Add global context when one app covers several sites**: `datadogRum.setGlobalContextProperty('store', ...)` | Every view and action carries the store, so funnels, paths and heatmaps can be filtered per site | `app/components/StoreContext.js`, used in each store's `layout.js` |
 | 11 | **Plan for server-side events separately** | Events sent through the Product Analytics API are billed separately | Not used here |
@@ -105,6 +106,34 @@ These are collected from Datadog's Product Analytics and RUM docs. Each one is a
 Product Analytics keeps data for 15 months by default.
 
 **References:** [Product Analytics](https://docs.datadoghq.com/product_analytics/) · [Tracking user actions](https://docs.datadoghq.com/real_user_monitoring/browser/tracking_user_actions/) · [Profiles (setUser / setAccount)](https://docs.datadoghq.com/product_analytics/profiles/) · [Action Management](https://docs.datadoghq.com/product_analytics/action_management/) · [Advanced configuration](https://docs.datadoghq.com/real_user_monitoring/application_monitoring/browser/advanced_configuration/)
+
+### Session Replay, Feature Flags and Experiments
+
+- **RUM and Session Replay record 100% of sessions** (`sessionSampleRate: 100`, `sessionReplaySampleRate: 100`), with `defaultPrivacyLevel: 'mask-user-input'`, so typed text is masked in replays.
+- **Remote Configuration overrides these values.** The configuration behind `NEXT_PUBLIC_DD_REMOTE_CONFIG_ID` is currently empty, so the values in code apply. If you set sample rates or privacy there, set them to the same values.
+
+**Feature flags on the hero banners.** Each store's home page asks a string flag which campaign to show first. The flag value is a slide id:
+
+| Flag key | Variants | Control (code default) |
+|---|---|---|
+| `supermarket_hero_campaign` | `free-gift-tote`, `snack-fest`, `weekly-deals` | `free-gift-tote` |
+| `furniture_mart_hero_campaign` | `make-room-to-celebrate`, `sofa-week`, `cosy-corners` | `make-room-to-celebrate` |
+
+- If a flag doesn't exist, or the flags can't be loaded within 3 seconds, the banner falls back to the control.
+- While flags load, the banner keeps its space but shows no campaign, so visitors don't see one campaign swap to another.
+- Flag values are attached to RUM views, errors and (via `trackFeatureFlagsForEvents: ['action']`) clicks.
+
+**Why a visitor id?** Experiments assign each subject to a variant using the flag `targetingKey`, then join those exposures to RUM and Product Analytics events by `usr.id`. Both must be the same and must stay the same between visits. With no login, `app/visitor.js` generates a random id once and keeps it in localStorage. A real app would use its internal user id after login.
+
+**Set up in Datadog (UI)**
+
+1. **Product Analytics:** Digital Experience → Manage Applications → this app → Product Settings → Product Analytics → Enable.
+2. **Feature Flags:** create both string flags with the variants above. Enable them in the flag environment that `env: 'demo'` maps to. In this org that is **Staging**: the flags API answers for `demo` with the environment "Staging". The default (served) variant is the control.
+3. **Experiments:** on each flag, click **Create New Experiment**, or use Product Analytics → Experiments.
+   - **Subject type:** User (`@usr.id`).
+   - **Variants:** control vs `snack-fest` / `sofa-week`, 50/50.
+   - **Primary metric:** sessions that view the level-2 page (`/supermarket/category/snacks--confectionery`, `/furniture-mart/category/sofas-armchairs`).
+   - **Secondary metrics:** `Hero banner: *` clicks and `Add to cart` clicks.
 
 ### Keeping your IDs out of the public repo
 - The code reads the IDs from `NEXT_PUBLIC_DD_*` environment variables instead of hardcoding them.

@@ -53,7 +53,7 @@ export default function FmHeader() {
             {/*
               PRODUCT ANALYTICS BEST PRACTICE: identify users when they log in, as in the
               supermarket Header.js: datadogRum.setUser({ id }) / datadogRum.clearUser().
-              This demo has no real login.
+              This demo has no login; instrumentation-client.js uses a random visitor id.
             */}
             <button className="fm-icon-btn" aria-label="Log in">👤</button>
             <button className="fm-icon-btn" aria-label="Wishlist">♡</button>

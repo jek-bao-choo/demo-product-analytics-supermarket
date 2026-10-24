@@ -21,6 +21,7 @@
 //   Step 2: initialise RUM              -> this file
 //   Step 3: add the Datadog component   -> app/layout.js
 //   Step 4: add error tracking (optional) -> app/error.js, app/global-error.js
+//   Step 5: Feature Flags + Experiments (optional) -> this file, app/components/FlagsProvider.js
 //
 // -----------------------------------------------------------------------------
 // STEP 1: Install packages  (requires Next.js v15.3+ and Node.js 18+)
@@ -83,6 +84,28 @@
 //   Next.js copies them into the browser bundle at build time.
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
+// STEP 5 (Optional): Datadog Feature Flags and Experiments
+//   npm install @datadog/openfeature-browser @openfeature/web-sdk @openfeature/core @openfeature/react-sdk
+//
+//   Feature Flags use the OpenFeature standard. The DatadogProvider below
+//   downloads the flag values for this visitor once, then every flag is
+//   evaluated locally (no request per flag). It must start after RUM, so flag
+//   evaluations are attached to RUM events, and it uses the same applicationId,
+//   clientToken, site and env as RUM.
+//
+//   Experiments are set up in Datadog on top of a flag. Each evaluation records
+//   an "exposure" (this visitor saw variant X). Datadog joins exposures to RUM /
+//   Product Analytics events by user id, so the flag targetingKey and
+//   datadogRum.setUser({ id }) must be the same value (see app/visitor.js).
+//
+//   This demo uses two string flags to choose the lead hero banner in each store
+//   (see app/flags.js). React components read them with useStringFlagValue();
+//   the React provider is in app/components/FlagsProvider.js.
+//
+//   NOTE: remoteConfiguration (below) overrides the sample rates and privacy level
+//   set in code. Set them to the same values in Datadog's Remote Configuration.
+// -----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
 // PRODUCT ANALYTICS SETUP BEST PRACTICES (details in README "Best practices")
 //   1. Enable Product Analytics for the app in Datadog. Without the setting,
 //      the events only appear in RUM.
@@ -101,9 +124,14 @@
 // -----------------------------------------------------------------------------
 import { datadogRum } from '@datadog/browser-rum';
 import { nextjsPlugin } from '@datadog/browser-rum-nextjs'; // [NEW] Next.js integration
+import { DatadogProvider, withTimeout } from '@datadog/openfeature-browser'; // Step 5: Feature Flags
+import { OpenFeature } from '@openfeature/web-sdk'; //                              Step 5: Feature Flags
+import { getVisitorId } from './app/visitor';
 
 const applicationId = process.env.NEXT_PUBLIC_DD_APPLICATION_ID;
 const clientToken = process.env.NEXT_PUBLIC_DD_CLIENT_TOKEN;
+const site = process.env.NEXT_PUBLIC_DD_SITE || 'datadoghq.com';
+const env = 'demo'; //                e.g. 'prod', 'staging-1', 'dev'
 
 if (applicationId && clientToken) {
   datadogRum.init({
@@ -113,21 +141,39 @@ if (applicationId && clientToken) {
       // [NEW] Remote Configuration (optional): manage sampling and privacy settings from Datadog
       id: process.env.NEXT_PUBLIC_DD_REMOTE_CONFIG_ID,
     },
-    site: process.env.NEXT_PUBLIC_DD_SITE || 'datadoghq.com',
+    site,
     service: 'supermarket-web',
-    env: 'demo', //                   e.g. 'prod', 'staging-1', 'dev'
+    env,
     version: '1.0.0', //              e.g. '1.0.0'
     sessionSampleRate: 100, //        capture 100% of sessions (recommended for Product Analytics)
-    sessionReplaySampleRate: 20, //   capture 20% of sessions with replay
+    sessionReplaySampleRate: 100, //  capture 100% of sessions with replay
     trackResources: true, //          Enable Resource tracking
     trackUserInteractions: true, //   Enable Action tracking (needed for Product Analytics)
     trackLongTasks: true, //          Enable Long Tasks tracking
+    trackFeatureFlagsForEvents: ['action'], // also attach flag values to clicks (views and errors get them by default)
 
     // ----- Recommended Options -----
     // allowedTracingUrls: '<BACKEND_URL>',     // Enable distributed tracing
-    // defaultPrivacyLevel: 'mask-user-input',  // 'mask-user-input' | 'allow' | 'mask'
+    defaultPrivacyLevel: 'mask-user-input', // 'mask-user-input' | 'allow' | 'mask'
     plugins: [nextjsPlugin()], // [NEW] Next.js integration
   });
+
+  // Identify the visitor (best practice 7). The demo has no login, so a random id
+  // kept in localStorage stands in for the user id. Experiments need it to match
+  // the flag targetingKey below.
+  const visitorId = getVisitorId();
+  datadogRum.setUser({ id: visitorId });
+
+  // Step 5: start Datadog Feature Flags after RUM. setProvider() does not block
+  // the page; flag hooks return their default value until the flags arrive.
+  const flagProvider = new DatadogProvider({
+    applicationId,
+    clientToken,
+    site,
+    env,
+    flagConfigurationFetch: withTimeout(globalThis.fetch, 3_000),
+  });
+  OpenFeature.setProvider(flagProvider, { targetingKey: visitorId });
 } else {
   console.warn('[Datadog] NEXT_PUBLIC_DD_APPLICATION_ID / NEXT_PUBLIC_DD_CLIENT_TOKEN not set - RUM disabled.');
 }

@@ -30,16 +30,17 @@ export default function ProductCard({ product }) {
       <p className="product-name">{product.name}</p>
       {/*
         PRODUCT ANALYTICS BEST PRACTICE: name key actions after what the user intends.
-          - Today the click name comes from the button text ("Add to cart"). That works,
-            but every product's button gets the same name. To set a stable name
-            explicitly, add data-dd-action-name="Add to cart" to the button. Explicit
-            names are still shown even when enablePrivacyForActionName masks the rest.
+          - data-dd-action-name="Add to cart" gives the click a stable name that does
+            not change with the button text, and still shows when
+            enablePrivacyForActionName masks other names. Experiments use it as a metric.
           - To filter funnels by product, also send a custom action with details, e.g.
               datadogRum.addAction('cart_add', { product_id: product.id, price: product.price })
           - No-code alternative: name the click in Datadog with the Action Management
             Visual Labeler. The name also applies to past data.
       */}
-      <button className="btn btn-solid add-btn" onClick={add}>Add to cart</button>
+      <button className="btn btn-solid add-btn" onClick={add} data-dd-action-name="Add to cart">
+        Add to cart
+      </button>
     </article>
   );
 }

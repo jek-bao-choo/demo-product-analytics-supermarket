@@ -29,12 +29,17 @@ export default function FmProductCard({ product }) {
         <p className="fm-rating">★ {product.rating} ({product.reviews})</p>
       )}
       {/*
-        PRODUCT ANALYTICS BEST PRACTICE: this button has no text, so name it explicitly
-        (data-dd-action-name="Add to cart") or send a custom action with details, e.g.
+        PRODUCT ANALYTICS BEST PRACTICE: this button has no text, so it is named
+        explicitly with data-dd-action-name (the same name as the supermarket's button,
+        so one experiment metric covers both stores). For details, also send e.g.
           datadogRum.addAction('cart_add', { product_id: product.id, price: product.price })
-        Without a name, the click is labelled from the aria-label.
       */}
-      <button className="fm-add-btn" aria-label={`Add ${product.name} to shopping bag`} onClick={add}>
+      <button
+        className="fm-add-btn"
+        aria-label={`Add ${product.name} to shopping bag`}
+        onClick={add}
+        data-dd-action-name="Add to cart"
+      >
         🛒+
       </button>
     </article>

@@ -1,5 +1,6 @@
 import './globals.css';
 import { DatadogAppRouter } from '@datadog/browser-rum-nextjs';
+import FlagsProvider from './components/FlagsProvider';
 
 export const metadata = {
   title: 'Demo Stores | Product Analytics',
@@ -25,7 +26,7 @@ export default function RootLayout({ children }) {
               effect), remove that code, because this component replaces it.
         */}
         <DatadogAppRouter />
-        {children}
+        <FlagsProvider>{children}</FlagsProvider>
       </body>
     </html>
   );

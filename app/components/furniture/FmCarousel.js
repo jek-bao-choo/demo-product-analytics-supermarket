@@ -2,9 +2,24 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
+import { useOpenFeatureClientStatus, useStringFlagValue } from '@openfeature/react-sdk';
 import { FM_CATEGORY_URL } from '../../furniture-data';
+import { leadWith } from '../../flags';
 
-export default function FmCarousel({ slides }) {
+export default function FmCarousel({ flagKey, ...props }) {
+  return flagKey ? <FlaggedFmCarousel flagKey={flagKey} {...props} /> : <FmCarouselView {...props} />;
+}
+
+// Datadog Feature Flag: the flag value is the id of the slide to show first. Until
+// the flags arrive, the banner keeps its space but shows no campaign, so visitors do
+// not see one campaign swap to another.
+function FlaggedFmCarousel({ flagKey, slides, ...props }) {
+  const lead = useStringFlagValue(flagKey, slides[0].id);
+  const pending = useOpenFeatureClientStatus() === 'NOT_READY';
+  return <FmCarouselView {...props} slides={leadWith(slides, lead)} pending={pending} />;
+}
+
+function FmCarouselView({ slides, pending = false }) {
   const [index, setIndex] = useState(0);
   const go = (step) => setIndex((i) => (i + step + slides.length) % slides.length);
   const slide = slides[index];
@@ -12,12 +27,17 @@ export default function FmCarousel({ slides }) {
   return (
     <div className="fm-carousel">
       {/*
-        PRODUCT ANALYTICS BEST PRACTICE: every slide links to the same page, so give
-        each banner its own action name to compare which campaign drives traffic, e.g.
-        data-dd-action-name={`Hero banner: ${slide.id}`}. Without it, the name is the
-        banner's text, which changes whenever marketing changes the copy.
+        PRODUCT ANALYTICS BEST PRACTICE: every slide links to the same page, so each
+        banner gets its own action name to compare which campaign drives traffic.
+        Without it, the name is the banner's text, which changes whenever marketing
+        changes the copy. Experiments can use these clicks as a metric.
       */}
-      <Link href={FM_CATEGORY_URL} className="fm-banner" style={{ background: slide.bg }}>
+      <Link
+        href={FM_CATEGORY_URL}
+        className={`fm-banner ${pending ? 'banner-pending' : ''}`}
+        style={{ background: pending ? '#e9e9e9' : slide.bg }}
+        data-dd-action-name={`Hero banner: ${slide.id}`}
+      >
         <div className="fm-banner-panel" style={{ background: slide.panel }}>
           <h2 className="fm-banner-title">{slide.title}</h2>
           <p className="fm-banner-subtitle">{slide.subtitle}</p>
